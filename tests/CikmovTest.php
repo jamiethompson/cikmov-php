@@ -28,6 +28,7 @@ final class CikmovTest extends TestCase
     public static function validRealWorldExamplesProvider(): iterable
     {
         yield 'EC1A' => ['EC1A 1AL', 'EC1A 1AL'];
+        yield 'W12' => ['W12 7RJ', 'W12 7RJ'];
         yield 'SW1A' => ['SW1A 1AA', 'SW1A 1AA'];
         yield 'WC2H' => ['WC2H 7LT', 'WC2H 7LT'];
         yield 'YO1' => ['YO1 7HB', 'YO1 7HB'];
@@ -219,6 +220,9 @@ final class CikmovTest extends TestCase
         yield 'NW1A not NW1W' => ['NW1A 1AA'];
         yield 'SE1A not SE1P' => ['SE1A 1AA'];
         yield 'EC1Q invalid AA9A letter' => ['EC1Q 1AA'];
+        yield 'WC3A invalid district in allowed area' => ['WC3A 1AA'];
+        yield 'BF1A valid final letter but wrong area' => ['BF1A 1AA'];
+        yield 'EC1T valid area invalid AA9A final letter' => ['EC1T 1AA'];
     }
 
     #[DataProvider('areaConfusionFixProvider')]
@@ -248,6 +252,13 @@ final class CikmovTest extends TestCase
         self::assertNotNull($result->bestCandidate);
         self::assertNotSame([], $result->alternatives);
         self::assertLessThan(95, $result->confidence);
+        self::assertLessThan(100, $result->confidence);
+        self::assertSame(count($result->alternatives), count(array_unique($result->alternatives)));
+        self::assertNotContains($result->bestCandidate, $result->alternatives);
+
+        foreach ($result->alternatives as $alternative) {
+            self::assertMatchesRegularExpression('/^[A-Z]{1,2}[0-9][A-Z0-9]? [0-9][A-Z]{2}$/', $alternative);
+        }
     }
 
     /**
@@ -281,6 +292,71 @@ final class CikmovTest extends TestCase
         yield 'short malformed' => ['AA 11'];
         yield 'class mismatch' => ['A1A A1A'];
         yield 'invalid area' => ['ZZ99 9ZZ'];
+        yield 'structural inward mismatch' => ['NE14 ABJ'];
+    }
+
+    #[DataProvider('areaInvalidButFormatLikeProvider')]
+    public function testAreaInvalidButFormatLikeInputsAreRejected(string $input): void
+    {
+        $result = Cikmov::analyse($input);
+
+        self::assertFalse($result->inputWasValid);
+        self::assertNull($result->bestCandidate);
+        self::assertNull($result->appliedPostcode);
+        self::assertSame(0, $result->confidence);
+    }
+
+    /**
+     * @return iterable<string, array{string}>
+     */
+    public static function areaInvalidButFormatLikeProvider(): iterable
+    {
+        yield 'ZZ area' => ['ZZ1 1AA'];
+        yield 'CJ area' => ['CJ1 1AA'];
+        yield 'J area' => ['J1 1AA'];
+        yield 'BJ69 area' => ['BJ69 4ME'];
+    }
+
+    #[DataProvider('forbiddenOutwardLetterProvider')]
+    public function testForbiddenOutwardLettersAreRejected(string $input): void
+    {
+        $result = Cikmov::analyse($input);
+
+        self::assertFalse($result->inputWasValid);
+        self::assertNull($result->bestCandidate);
+        self::assertNull($result->appliedPostcode);
+    }
+
+    /**
+     * @return iterable<string, array{string}>
+     */
+    public static function forbiddenOutwardLetterProvider(): iterable
+    {
+        yield 'forbidden first Q' => ['Q1 1AA'];
+        yield 'forbidden first V' => ['V1 1AA'];
+        yield 'forbidden first X' => ['X1 1AA'];
+        yield 'forbidden second I' => ['AI1 1AA'];
+        yield 'forbidden second J' => ['AJ1 1AA'];
+        yield 'forbidden second Z' => ['AZ1 1AA'];
+    }
+
+    #[DataProvider('leadingZeroDistrictProvider')]
+    public function testLeadingZeroDistrictDigitIsRejected(string $input): void
+    {
+        $result = Cikmov::analyse($input);
+
+        self::assertFalse($result->inputWasValid);
+        self::assertNull($result->bestCandidate);
+        self::assertNull($result->appliedPostcode);
+    }
+
+    /**
+     * @return iterable<string, array{string}>
+     */
+    public static function leadingZeroDistrictProvider(): iterable
+    {
+        yield 'single letter area' => ['B0 1AA'];
+        yield 'double letter area' => ['AB0 1AA'];
     }
 
     public function testGirSpecialCaseIsAccepted(): void
@@ -345,6 +421,31 @@ final class CikmovTest extends TestCase
 
         self::assertSame('EC1A 1AL', $result->bestCandidate);
         self::assertNull($result->appliedPostcode);
+    }
+
+    public function testAlternativesAreCappedAtFive(): void
+    {
+        $result = Cikmov::analyse('8BG GFT', 0);
+
+        self::assertCount(5, $result->alternatives);
+    }
+
+    public function testAmbiguityCanStillApplyWhenThresholdIsLowered(): void
+    {
+        $result = Cikmov::analyse('S01 1AA', 80);
+
+        self::assertNotSame([], $result->alternatives);
+        self::assertNotNull($result->appliedPostcode);
+    }
+
+    public function testTopTieCanApplyWhenThresholdAllowsIt(): void
+    {
+        $defaultThresholdResult = Cikmov::analyse('W5J 10T');
+        self::assertNotSame([], $defaultThresholdResult->alternatives);
+        self::assertNull($defaultThresholdResult->appliedPostcode);
+
+        $loweredThresholdResult = Cikmov::analyse('W5J 10T', 79);
+        self::assertNotNull($loweredThresholdResult->appliedPostcode);
     }
 
     public function testThresholdRangeValidation(): void

@@ -129,4 +129,64 @@ final class ResultTest extends TestCase
             alternatives: ['not-a-postcode']
         );
     }
+
+    public function testBestCandidateMustBeCanonical(): void
+    {
+        $this->expectException(InvalidArgumentException::class);
+
+        new Result(
+            input: 'x',
+            normalizedInput: 'X',
+            inputWasValid: false,
+            bestCandidate: 'not-canonical',
+            confidence: 80,
+            appliedPostcode: null,
+            alternatives: []
+        );
+    }
+
+    public function testAppliedPostcodeMustBeCanonical(): void
+    {
+        $this->expectException(InvalidArgumentException::class);
+
+        new Result(
+            input: 'x',
+            normalizedInput: 'X',
+            inputWasValid: false,
+            bestCandidate: 'EC1A 1AL',
+            confidence: 80,
+            appliedPostcode: 'not-canonical',
+            alternatives: []
+        );
+    }
+
+    public function testValidInputCannotHaveAlternatives(): void
+    {
+        $this->expectException(InvalidArgumentException::class);
+
+        new Result(
+            input: 'EC1A 1AL',
+            normalizedInput: 'EC1A 1AL',
+            inputWasValid: true,
+            bestCandidate: 'EC1A 1AL',
+            confidence: 100,
+            appliedPostcode: 'EC1A 1AL',
+            alternatives: ['EC1A 1BL']
+        );
+    }
+
+    public function testInvalidInputCannotHaveFullConfidence(): void
+    {
+        $this->expectException(InvalidArgumentException::class);
+
+        new Result(
+            input: 'EC1A IAL',
+            normalizedInput: 'EC1A IAL',
+            inputWasValid: false,
+            bestCandidate: 'EC1A 1AL',
+            confidence: 100,
+            appliedPostcode: 'EC1A 1AL',
+            alternatives: []
+        );
+    }
 }
