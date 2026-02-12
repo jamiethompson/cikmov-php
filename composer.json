@@ -1,0 +1,25 @@
+{
+    "name": "jamiethompson/cikmov",
+    "description": "Deterministic UK postcode analysis and correction using constraint-based grammar rules.",
+    "type": "library",
+    "license": "MIT",
+    "require": {
+        "php": "^8.2"
+    },
+    "require-dev": {
+        "phpunit/phpunit": "^11.5"
+    },
+    "autoload": {
+        "psr-4": {
+            "Cikmov\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Cikmov\\Tests\\": "tests/"
+        }
+    },
+    "scripts": {
+        "test": "phpunit --colors=always"
+    }
+}
