@@ -52,7 +52,7 @@ No configuration object is exposed in v1.
 Fields:
 
 - `input`: original raw input
-- `normalizedInput`: uppercase normalized form used during analysis
+- `normalizedInput`: display-normalized uppercase form used during analysis (not guaranteed canonical-valid)
 - `inputWasValid`: whether normalized input was already structurally valid
 - `bestCandidate`: highest scoring canonical candidate, if any
 - `confidence`: numeric confidence (`0-100`)
@@ -158,6 +158,13 @@ Scoring policy:
 - edits in outward positions are penalized more than inward positions
 - this reflects higher structural significance of outward geography encoding
 - ambiguity lowers confidence further
+- alternatives are capped at 5 entries for bounded output size
+
+Ambiguity application policy:
+
+- ambiguity reduces confidence deterministically
+- correction still applies when reduced confidence remains above the threshold
+- top score ties are not automatically rejected; threshold gating remains the apply gate
 
 Why outward edits are penalized more:
 
@@ -266,4 +273,3 @@ The PHPUnit suite covers:
 - Northern Ireland format handling
 - idempotency
 - `Result` invariants
-
