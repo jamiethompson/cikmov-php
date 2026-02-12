@@ -45,6 +45,14 @@ final class Result
             throw new InvalidArgumentException('Valid input must apply the canonical candidate.');
         }
 
+        if ($this->inputWasValid && $this->alternatives !== []) {
+            throw new InvalidArgumentException('Valid input cannot include alternatives.');
+        }
+
+        if (!$this->inputWasValid && $this->confidence === 100) {
+            throw new InvalidArgumentException('Corrected or rejected input cannot have full confidence.');
+        }
+
         if ($this->bestCandidate === null && $this->appliedPostcode !== null) {
             throw new InvalidArgumentException('Cannot apply a postcode without a best candidate.');
         }

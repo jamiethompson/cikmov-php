@@ -36,16 +36,12 @@ final class Analyser
      * @var array<string, array<string, int>>
      */
     private const array LETTER_TO_DIGITS = [
-        'A' => ['4' => 2],
         'B' => ['8' => 0, '3' => 2],
-        'D' => ['0' => 2],
         'G' => ['6' => 0, '9' => 2],
         'I' => ['1' => 0],
         'L' => ['1' => 0],
         'O' => ['0' => 0],
-        'Q' => ['0' => 2],
         'S' => ['5' => 0],
-        'T' => ['7' => 1],
         'Z' => ['2' => 0],
     ];
 
