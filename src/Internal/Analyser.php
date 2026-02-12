@@ -9,17 +9,17 @@ use InvalidArgumentException;
 
 final class Analyser
 {
-    private const int OUTWARD_SUBSTITUTION_BASE_PENALTY = 8;
-    private const int INWARD_SUBSTITUTION_BASE_PENALTY = 4;
-    private const int TIE_AMBIGUITY_PENALTY = 15;
-    private const int NEAR_AMBIGUITY_PENALTY = 6;
-    private const int ALTERNATIVE_SCORE_WINDOW = 4;
-    private const int MAX_ALTERNATIVES = 5;
+    private const OUTWARD_SUBSTITUTION_BASE_PENALTY = 8;
+    private const INWARD_SUBSTITUTION_BASE_PENALTY = 4;
+    private const TIE_AMBIGUITY_PENALTY = 15;
+    private const NEAR_AMBIGUITY_PENALTY = 6;
+    private const ALTERNATIVE_SCORE_WINDOW = 4;
+    private const MAX_ALTERNATIVES = 5;
 
     /**
      * @var array<string, array<string, int>>
      */
-    private const array DIGIT_TO_LETTERS = [
+    private const DIGIT_TO_LETTERS = [
         '0' => ['O' => 0, 'D' => 2, 'Q' => 2, 'L' => 3],
         '1' => ['I' => 0, 'L' => 0],
         '2' => ['Z' => 0],
@@ -35,7 +35,7 @@ final class Analyser
     /**
      * @var array<string, array<string, int>>
      */
-    private const array LETTER_TO_DIGITS = [
+    private const LETTER_TO_DIGITS = [
         'B' => ['8' => 0, '3' => 2],
         'G' => ['6' => 0, '9' => 2],
         'I' => ['1' => 0],

@@ -8,18 +8,18 @@ use InvalidArgumentException;
 
 final class PostcodeRules
 {
-    public const string GIR_COMPACT = 'GIR0AA';
-    public const string GIR_CANONICAL = 'GIR 0AA';
+    public const GIR_COMPACT = 'GIR0AA';
+    public const GIR_CANONICAL = 'GIR 0AA';
 
-    private const string FORBIDDEN_INWARD_LETTERS = 'CIKMOV';
-    private const string FORBIDDEN_FIRST_OUTWARD_LETTERS = 'QVX';
-    private const string FORBIDDEN_SECOND_OUTWARD_LETTERS = 'IJZ';
-    private const string AA9A_ALLOWED_FINAL_LETTERS = 'ABEHMNPRVWXY';
+    private const FORBIDDEN_INWARD_LETTERS = 'CIKMOV';
+    private const FORBIDDEN_FIRST_OUTWARD_LETTERS = 'QVX';
+    private const FORBIDDEN_SECOND_OUTWARD_LETTERS = 'IJZ';
+    private const AA9A_ALLOWED_FINAL_LETTERS = 'ABEHMNPRVWXY';
 
     /**
      * @var array<string, list<string>>
      */
-    private const array OUTWARD_PATTERNS_BY_LENGTH = [
+    private const OUTWARD_PATTERNS_BY_LENGTH = [
         2 => ['A9'],
         3 => ['A9A', 'A99', 'AA9'],
         4 => ['AA9A', 'AA99'],
@@ -28,7 +28,7 @@ final class PostcodeRules
     /**
      * @var array<string, list<string>>
      */
-    private const array OUTWARD_PATTERN_TOKENS = [
+    private const OUTWARD_PATTERN_TOKENS = [
         'A9' => ['L', 'N'],
         'A9A' => ['L', 'N', 'L'],
         'A99' => ['L', 'N', 'D'],
@@ -40,7 +40,7 @@ final class PostcodeRules
     /**
      * @var array<string, bool>
      */
-    private const array AREA_SET = [
+    private const AREA_SET = [
         'AB' => true,
         'AL' => true,
         'B' => true,

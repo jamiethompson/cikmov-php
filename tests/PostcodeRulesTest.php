@@ -13,7 +13,7 @@ final class PostcodeRulesTest extends TestCase
     /**
      * @var list<string>
      */
-    private const array ALLOWED_AREAS = [
+    private const ALLOWED_AREAS = [
         'AB', 'AL', 'B', 'BA', 'BB', 'BD', 'BF', 'BH', 'BL', 'BN', 'BR', 'BS', 'BT', 'BX', 'CA', 'CB', 'CF',
         'CH', 'CM', 'CO', 'CR', 'CT', 'CV', 'CW', 'DA', 'DD', 'DE', 'DG', 'DH', 'DL', 'DN', 'DT', 'DY', 'E',
         'EC', 'EH', 'EN', 'EX', 'FK', 'FY', 'G', 'GL', 'GU', 'GY', 'HA', 'HD', 'HG', 'HP', 'HR', 'HS', 'HU',
