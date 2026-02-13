@@ -20,6 +20,6 @@
         }
     },
     "scripts": {
-        "test": "phpunit --colors=always"
+        "test": "phpunit --testdox --colors=always"
     }
 }
