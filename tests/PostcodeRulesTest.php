@@ -77,6 +77,28 @@ final class PostcodeRulesTest extends TestCase
         self::assertSame('WC2H7LT', PostcodeRules::compactFromInput("  wc2h-7lt\t"));
     }
 
+    public function testCompactFromInputRetainsShiftedDigitCharacters(): void
+    {
+        self::assertSame('EC!A"AL', PostcodeRules::compactFromInput('  ec!a "al  '));
+    }
+
+    public function testCompactFromInputNormalizesPoundToHashAlias(): void
+    {
+        self::assertSame('EC1A#AL', PostcodeRules::compactFromInput("EC1A \u{00A3}AL"));
+    }
+
+    public function testCompactFromInputTrimsSurroundingShiftedSymbols(): void
+    {
+        self::assertSame('EC1A1AL', PostcodeRules::compactFromInput('!EC1A 1AL!'));
+        self::assertSame('EC!A1AL', PostcodeRules::compactFromInput('(EC!A 1AL)'));
+    }
+
+    public function testStripShiftedDigitSymbolsRemovesInsertedShiftedNoise(): void
+    {
+        self::assertSame('M11AE', PostcodeRules::stripShiftedDigitSymbols('M!11AE'));
+        self::assertSame('SW1A1AA', PostcodeRules::stripShiftedDigitSymbols('SW@1A1AA'));
+    }
+
     public function testDisplayFromCompactSpacingRules(): void
     {
         self::assertSame('', PostcodeRules::displayFromCompact(''));

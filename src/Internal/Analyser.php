@@ -11,6 +11,9 @@ final class Analyser
 {
     private const OUTWARD_SUBSTITUTION_BASE_PENALTY = 8;
     private const INWARD_SUBSTITUTION_BASE_PENALTY = 4;
+    private const OUTWARD_SHIFTED_DIGIT_AREA_PENALTY = 22;
+    private const OUTWARD_SHIFTED_DIGIT_PENALTY = 14;
+    private const INWARD_SHIFTED_DIGIT_PENALTY = 8;
     private const TIE_AMBIGUITY_PENALTY = 15;
     private const NEAR_AMBIGUITY_PENALTY = 6;
     private const ALTERNATIVE_SCORE_WINDOW = 4;
@@ -80,7 +83,22 @@ final class Analyser
             );
         }
 
-        if (!preg_match('/[A-Z]/', $compact) || !preg_match('/[0-9]/', $compact)) {
+        $compactWithoutShiftedSymbols = PostcodeRules::stripShiftedDigitSymbols($compact);
+        if ($compactWithoutShiftedSymbols !== $compact && PostcodeRules::isValidCompact($compactWithoutShiftedSymbols)) {
+            $canonical = PostcodeRules::formatCompact($compactWithoutShiftedSymbols);
+
+            return new Result(
+                input: $input,
+                normalizedInput: $canonical,
+                inputWasValid: true,
+                bestCandidate: $canonical,
+                confidence: 100,
+                appliedPostcode: $canonical,
+                alternatives: []
+            );
+        }
+
+        if (!preg_match('/[A-Z]/', $compact) || !PostcodeRules::containsDigitLikeCharacter($compact)) {
             return new Result(
                 input: $input,
                 normalizedInput: $normalizedInput,
@@ -206,11 +224,17 @@ final class Analyser
                 continue;
             }
 
+            $areaLength = str_starts_with($pattern, 'AA') ? 2 : 1;
             $optionsByPosition = [];
             $isPatternViable = true;
 
             foreach ($outwardTokens as $position => $token) {
-                $options = self::optionsForCharacter($outwardInput[$position], $token, true);
+                $options = self::optionsForCharacter(
+                    character: $outwardInput[$position],
+                    expectedToken: $token,
+                    outward: true,
+                    isOutwardAreaPosition: $position < $areaLength
+                );
                 if ($options === []) {
                     $isPatternViable = false;
                     break;
@@ -273,12 +297,23 @@ final class Analyser
                 return false;
             }
 
-            if ($token === 'D' && !ctype_digit($character)) {
-                return false;
-            }
+            if ($token !== 'L') {
+                if (ctype_digit($character)) {
+                    if ($token === 'N' && $character === '0') {
+                        return false;
+                    }
 
-            if ($token === 'N' && (!ctype_digit($character) || $character === '0')) {
-                return false;
+                    continue;
+                }
+
+                $shiftedDigit = PostcodeRules::shiftedDigitReplacement($character);
+                if ($shiftedDigit === null) {
+                    return false;
+                }
+
+                if ($token === 'N' && $shiftedDigit === '0') {
+                    return false;
+                }
             }
         }
 
@@ -315,8 +350,12 @@ final class Analyser
     /**
      * @return list<array{char:string,penalty:int}>
      */
-    private static function optionsForCharacter(string $character, string $expectedToken, bool $outward): array
-    {
+    private static function optionsForCharacter(
+        string $character,
+        string $expectedToken,
+        bool $outward,
+        bool $isOutwardAreaPosition = false
+    ): array {
         $basePenalty = $outward ? self::OUTWARD_SUBSTITUTION_BASE_PENALTY : self::INWARD_SUBSTITUTION_BASE_PENALTY;
         $options = [];
 
@@ -346,6 +385,14 @@ final class Analyser
                     $options[] = ['char' => $replacement, 'penalty' => $basePenalty + $extraPenalty];
                 }
             }
+
+            $shiftedDigit = PostcodeRules::shiftedDigitReplacement($character);
+            if ($shiftedDigit !== null && ($expectedToken !== 'N' || $shiftedDigit !== '0')) {
+                $options[] = [
+                    'char' => $shiftedDigit,
+                    'penalty' => self::shiftedDigitPenalty($outward, $isOutwardAreaPosition),
+                ];
+            }
         }
 
         $deduplicated = [];
@@ -370,5 +417,18 @@ final class Analyser
         );
 
         return $finalOptions;
+    }
+
+    private static function shiftedDigitPenalty(bool $outward, bool $isOutwardAreaPosition): int
+    {
+        if (!$outward) {
+            return self::INWARD_SHIFTED_DIGIT_PENALTY;
+        }
+
+        if ($isOutwardAreaPosition) {
+            return self::OUTWARD_SHIFTED_DIGIT_AREA_PENALTY;
+        }
+
+        return self::OUTWARD_SHIFTED_DIGIT_PENALTY;
     }
 }

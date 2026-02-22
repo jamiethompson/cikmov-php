@@ -27,6 +27,38 @@ Why:
 - behaviour stays explainable, reproducible, and testable
 - correction risk is lower when every decision is rule-backed
 
+## Shifted Number-Row Digit Support
+
+`cikmov` supports deterministic correction when shifted number-row symbols are typed instead of digits.
+
+Supported substitutions:
+
+```text
+! -> 1
+@ -> 2
+" -> 2
+# -> 3
+£ -> 3
+$ -> 4
+% -> 5
+^ -> 6
+& -> 7
+* -> 8
+( -> 9
+) -> 0
+```
+
+Scope rules:
+
+- mapping is the union of UK + US number-row shifted symbols (including Irish usage of UK layout)
+- no keyboard-layout detection is performed at runtime
+- substitutions are attempted only where grammar requires digits:
+  - outward digit positions
+  - district digit positions
+  - inward first character
+- substitutions are not attempted in letter-only positions
+- when stripping shifted symbols produces an already-valid compact postcode, symbols are treated as noise and not as digit substitutions
+
 ## Public API
 
 ```php
@@ -159,6 +191,10 @@ Scoring policy:
 - this reflects higher structural significance of outward geography encoding
 - ambiguity lowers confidence further
 - alternatives are capped at 5 entries for bounded output size
+- shifted number-row symbol penalties:
+  - inward digit substitution: `-8`
+  - outward non-area digit substitution: `-14`
+  - outward area digit substitution: `-22` (reserved for completeness; current grammar does not place digits in outward area-letter slots)
 
 Ambiguity application policy:
 
@@ -250,6 +286,24 @@ $result = Cikmov::analyse('!!!!');
 $result = Cikmov::analyse('EC1A 1AI');
 // invalid due inward forbidden letter I
 // no correction is applied
+```
+
+### 6) Shifted-digit correction
+
+```php
+$result = Cikmov::analyse('EC1A !AL');
+// bestCandidate: "EC1A 1AL"
+// confidence: 92
+// appliedPostcode: "EC1A 1AL"
+```
+
+### 7) Shifted symbol in letter position is rejected
+
+```php
+$result = Cikmov::analyse('EC1A 1A!');
+// invalid: no shifted-digit substitution in letter-only positions
+// bestCandidate: null
+// appliedPostcode: null
 ```
 
 ## Embedded Postcode Areas

@@ -15,6 +15,28 @@ final class PostcodeRules
     private const FORBIDDEN_FIRST_OUTWARD_LETTERS = 'QVX';
     private const FORBIDDEN_SECOND_OUTWARD_LETTERS = 'IJZ';
     private const AA9A_ALLOWED_FINAL_LETTERS = 'ABEHMNPRVWXY';
+    private const SHIFTED_DIGIT_SYMBOLS = '!@"#$%^&*()';
+    private const SHIFTED_DIGIT_ALIASES = [
+        "\u{00A3}" => '#',
+    ];
+
+    /**
+     * @var array<string, string>
+     */
+    private const SHIFTED_DIGIT_TO_DIGIT = [
+        '!' => '1',
+        '@' => '2',
+        '"' => '2',
+        '#' => '3',
+        "\u{00A3}" => '3',
+        '$' => '4',
+        '%' => '5',
+        '^' => '6',
+        '&' => '7',
+        '*' => '8',
+        '(' => '9',
+        ')' => '0',
+    ];
 
     /**
      * @var array<string, list<string>>
@@ -172,9 +194,31 @@ final class PostcodeRules
     public static function compactFromInput(string $input): string
     {
         $normalized = strtoupper($input);
-        $compact = preg_replace('/[^A-Z0-9]+/', '', $normalized);
+        $normalized = strtr($normalized, self::SHIFTED_DIGIT_ALIASES);
+        $compact = preg_replace('/[^A-Z0-9!@"#$%\^&*()]+/', '', $normalized);
+        if ($compact === null || $compact === '') {
+            return '';
+        }
 
-        return $compact ?? '';
+        // Shifted symbols can validly stand in for digits, but never at postcode boundaries.
+        $compact = trim($compact, self::SHIFTED_DIGIT_SYMBOLS);
+
+        return $compact;
+    }
+
+    public static function containsDigitLikeCharacter(string $compact): bool
+    {
+        return strpbrk($compact, '0123456789' . self::SHIFTED_DIGIT_SYMBOLS) !== false;
+    }
+
+    public static function shiftedDigitReplacement(string $character): ?string
+    {
+        return self::SHIFTED_DIGIT_TO_DIGIT[$character] ?? null;
+    }
+
+    public static function stripShiftedDigitSymbols(string $compact): string
+    {
+        return str_replace(str_split(self::SHIFTED_DIGIT_SYMBOLS), '', $compact);
     }
 
     public static function displayFromCompact(string $compact): string
