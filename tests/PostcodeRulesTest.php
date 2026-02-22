@@ -87,6 +87,12 @@ final class PostcodeRulesTest extends TestCase
         self::assertSame('EC1A#AL', PostcodeRules::compactFromInput("EC1A \u{00A3}AL"));
     }
 
+    public function testCompactFromInputTrimsSurroundingShiftedSymbols(): void
+    {
+        self::assertSame('EC1A1AL', PostcodeRules::compactFromInput('!EC1A 1AL!'));
+        self::assertSame('EC!A1AL', PostcodeRules::compactFromInput('(EC!A 1AL)'));
+    }
+
     public function testDisplayFromCompactSpacingRules(): void
     {
         self::assertSame('', PostcodeRules::displayFromCompact(''));

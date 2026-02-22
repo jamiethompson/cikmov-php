@@ -86,6 +86,35 @@ final class CikmovTest extends TestCase
         yield 'extra spaces' => ['yo1   7hb', 'YO1 7HB'];
     }
 
+    #[DataProvider('surroundingShiftedNoiseProvider')]
+    public function testSurroundingShiftedSymbolsAreIgnoredAsNoise(string $input, string $canonical): void
+    {
+        $result = Cikmov::analyse($input);
+
+        self::assertTrue($result->inputWasValid);
+        self::assertSame($canonical, $result->appliedPostcode);
+        self::assertSame(100, $result->confidence);
+    }
+
+    /**
+     * @return iterable<string, array{string,string}>
+     */
+    public static function surroundingShiftedNoiseProvider(): iterable
+    {
+        yield 'trailing !' => ['EC1A 1AL!', 'EC1A 1AL'];
+        yield 'leading !' => ['!EC1A 1AL', 'EC1A 1AL'];
+        yield 'wrapped by parentheses' => ['(EC1A 1AL)', 'EC1A 1AL'];
+    }
+
+    public function testWrappedShiftedCorrectionStillCorrectsDeterministically(): void
+    {
+        $result = Cikmov::analyse('(EC!A 1AL)');
+
+        self::assertFalse($result->inputWasValid);
+        self::assertSame('EC1A 1AL', $result->bestCandidate);
+        self::assertSame('EC1A 1AL', $result->appliedPostcode);
+    }
+
     #[DataProvider('inwardDigitConfusionProvider')]
     public function testInwardDigitConfusionsAreCorrected(string $input, string $expected): void
     {

@@ -15,6 +15,7 @@ final class PostcodeRules
     private const FORBIDDEN_FIRST_OUTWARD_LETTERS = 'QVX';
     private const FORBIDDEN_SECOND_OUTWARD_LETTERS = 'IJZ';
     private const AA9A_ALLOWED_FINAL_LETTERS = 'ABEHMNPRVWXY';
+    private const SHIFTED_DIGIT_SYMBOLS = '!@"#$%^&*()';
     private const SHIFTED_DIGIT_ALIASES = [
         "\u{00A3}" => '#',
     ];
@@ -195,13 +196,19 @@ final class PostcodeRules
         $normalized = strtoupper($input);
         $normalized = strtr($normalized, self::SHIFTED_DIGIT_ALIASES);
         $compact = preg_replace('/[^A-Z0-9!@"#$%\^&*()]+/', '', $normalized);
+        if ($compact === null || $compact === '') {
+            return '';
+        }
 
-        return $compact ?? '';
+        // Shifted symbols can validly stand in for digits, but never at postcode boundaries.
+        $compact = trim($compact, self::SHIFTED_DIGIT_SYMBOLS);
+
+        return $compact;
     }
 
     public static function containsDigitLikeCharacter(string $compact): bool
     {
-        return (bool) preg_match('/[0-9!@"#$%\^&*()]/', $compact);
+        return strpbrk($compact, '0123456789' . self::SHIFTED_DIGIT_SYMBOLS) !== false;
     }
 
     public static function shiftedDigitReplacement(string $character): ?string
