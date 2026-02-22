@@ -93,6 +93,12 @@ final class PostcodeRulesTest extends TestCase
         self::assertSame('EC!A1AL', PostcodeRules::compactFromInput('(EC!A 1AL)'));
     }
 
+    public function testStripShiftedDigitSymbolsRemovesInsertedShiftedNoise(): void
+    {
+        self::assertSame('M11AE', PostcodeRules::stripShiftedDigitSymbols('M!11AE'));
+        self::assertSame('SW1A1AA', PostcodeRules::stripShiftedDigitSymbols('SW@1A1AA'));
+    }
+
     public function testDisplayFromCompactSpacingRules(): void
     {
         self::assertSame('', PostcodeRules::displayFromCompact(''));

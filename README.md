@@ -57,6 +57,7 @@ Scope rules:
   - district digit positions
   - inward first character
 - substitutions are not attempted in letter-only positions
+- when stripping shifted symbols produces an already-valid compact postcode, symbols are treated as noise and not as digit substitutions
 
 ## Public API
 

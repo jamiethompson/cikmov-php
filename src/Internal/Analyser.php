@@ -83,6 +83,21 @@ final class Analyser
             );
         }
 
+        $compactWithoutShiftedSymbols = PostcodeRules::stripShiftedDigitSymbols($compact);
+        if ($compactWithoutShiftedSymbols !== $compact && PostcodeRules::isValidCompact($compactWithoutShiftedSymbols)) {
+            $canonical = PostcodeRules::formatCompact($compactWithoutShiftedSymbols);
+
+            return new Result(
+                input: $input,
+                normalizedInput: $canonical,
+                inputWasValid: true,
+                bestCandidate: $canonical,
+                confidence: 100,
+                appliedPostcode: $canonical,
+                alternatives: []
+            );
+        }
+
         if (!preg_match('/[A-Z]/', $compact) || !PostcodeRules::containsDigitLikeCharacter($compact)) {
             return new Result(
                 input: $input,

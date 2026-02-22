@@ -216,6 +216,11 @@ final class PostcodeRules
         return self::SHIFTED_DIGIT_TO_DIGIT[$character] ?? null;
     }
 
+    public static function stripShiftedDigitSymbols(string $compact): string
+    {
+        return str_replace(str_split(self::SHIFTED_DIGIT_SYMBOLS), '', $compact);
+    }
+
     public static function displayFromCompact(string $compact): string
     {
         if ($compact === '') {

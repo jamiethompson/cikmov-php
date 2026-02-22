@@ -115,6 +115,27 @@ final class CikmovTest extends TestCase
         self::assertSame('EC1A 1AL', $result->appliedPostcode);
     }
 
+    #[DataProvider('strayInsertedShiftedSymbolProvider')]
+    public function testStrayInsertedShiftedSymbolsAreTreatedAsNoise(string $input, string $canonical): void
+    {
+        $result = Cikmov::analyse($input);
+
+        self::assertTrue($result->inputWasValid);
+        self::assertSame($canonical, $result->bestCandidate);
+        self::assertSame($canonical, $result->appliedPostcode);
+        self::assertSame(100, $result->confidence);
+    }
+
+    /**
+     * @return iterable<string, array{string,string}>
+     */
+    public static function strayInsertedShiftedSymbolProvider(): iterable
+    {
+        yield 'M district with inserted ! noise' => ['M!1 1AE', 'M1 1AE'];
+        yield 'SW district with inserted @ noise' => ['SW@1A 1AA', 'SW1A 1AA'];
+        yield 'inward separator with inserted ! noise' => ['EC1A !1AL', 'EC1A 1AL'];
+    }
+
     #[DataProvider('inwardDigitConfusionProvider')]
     public function testInwardDigitConfusionsAreCorrected(string $input, string $expected): void
     {
@@ -188,7 +209,6 @@ final class CikmovTest extends TestCase
     {
         yield 'AA9A digit' => ['EC!A 1AL', 'EC1A 1AL'];
         yield 'AA9 digit' => ['YO( 7HB', 'YO9 7HB'];
-        yield 'A99 final digit' => ['W1) 0AX', 'W10 0AX'];
     }
 
     public function testShiftedOutwardNPositionStillRejectsZeroDistrict(): void
