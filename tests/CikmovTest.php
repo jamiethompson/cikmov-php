@@ -111,6 +111,87 @@ final class CikmovTest extends TestCase
         yield 'G->6' => ['EC1A GAL', 'EC1A 6AL'];
     }
 
+    #[DataProvider('shiftedInwardDigitProvider')]
+    public function testShiftedInwardDigitCharactersAreCorrected(string $input, string $expected): void
+    {
+        $result = Cikmov::analyse($input);
+
+        self::assertFalse($result->inputWasValid);
+        self::assertSame($expected, $result->bestCandidate);
+        self::assertSame($expected, $result->appliedPostcode);
+        self::assertSame(92, $result->confidence);
+    }
+
+    /**
+     * @return iterable<string, array{string,string}>
+     */
+    public static function shiftedInwardDigitProvider(): iterable
+    {
+        yield '!->1' => ['EC1A !AL', 'EC1A 1AL'];
+        yield '@->2' => ['EC1A @AL', 'EC1A 2AL'];
+        yield '"->2' => ['EC1A "AL', 'EC1A 2AL'];
+        yield '#->3' => ['EC1A #AL', 'EC1A 3AL'];
+        yield '£->3' => ["EC1A \u{00A3}AL", 'EC1A 3AL'];
+        yield '$->4' => ['EC1A $AL', 'EC1A 4AL'];
+        yield '%->5' => ['EC1A %AL', 'EC1A 5AL'];
+        yield '^->6' => ['EC1A ^AL', 'EC1A 6AL'];
+        yield '&->7' => ['EC1A &AL', 'EC1A 7AL'];
+        yield '*->8' => ['EC1A *AL', 'EC1A 8AL'];
+        yield '(->9' => ['EC1A (AL', 'EC1A 9AL'];
+        yield ')->0' => ['EC1A )AL', 'EC1A 0AL'];
+    }
+
+    #[DataProvider('shiftedOutwardDigitProvider')]
+    public function testShiftedOutwardDigitCharactersAreCorrected(string $input, string $expected): void
+    {
+        $result = Cikmov::analyse($input);
+
+        self::assertFalse($result->inputWasValid);
+        self::assertSame($expected, $result->bestCandidate);
+        self::assertSame($expected, $result->appliedPostcode);
+        self::assertSame(86, $result->confidence);
+    }
+
+    /**
+     * @return iterable<string, array{string,string}>
+     */
+    public static function shiftedOutwardDigitProvider(): iterable
+    {
+        yield 'AA9A digit' => ['EC!A 1AL', 'EC1A 1AL'];
+        yield 'AA9 digit' => ['YO( 7HB', 'YO9 7HB'];
+        yield 'A99 final digit' => ['W1) 0AX', 'W10 0AX'];
+    }
+
+    public function testShiftedOutwardNPositionStillRejectsZeroDistrict(): void
+    {
+        $result = Cikmov::analyse('SW)A 1AA');
+
+        self::assertFalse($result->inputWasValid);
+        self::assertNull($result->bestCandidate);
+        self::assertNull($result->appliedPostcode);
+        self::assertSame(0, $result->confidence);
+    }
+
+    public function testShiftedDigitsAreNotAppliedInLetterPositions(): void
+    {
+        $result = Cikmov::analyse('EC1A 1A!');
+
+        self::assertFalse($result->inputWasValid);
+        self::assertNull($result->bestCandidate);
+        self::assertNull($result->appliedPostcode);
+        self::assertSame(0, $result->confidence);
+    }
+
+    public function testShiftedDigitsCanCombineWithExistingConfusions(): void
+    {
+        $result = Cikmov::analyse('EC!A 1A1');
+
+        self::assertFalse($result->inputWasValid);
+        self::assertSame('EC1A 1AL', $result->bestCandidate);
+        self::assertSame(82, $result->confidence);
+        self::assertNull($result->appliedPostcode);
+    }
+
     #[DataProvider('inwardLetterConfusionProvider')]
     public function testInwardLetterConfusionsAreCorrected(string $input, string $expected): void
     {
@@ -410,6 +491,7 @@ final class CikmovTest extends TestCase
     {
         yield 'valid input' => ['EC1A 1AL'];
         yield 'correction input' => ['EC1A IAL'];
+        yield 'shifted correction input' => ['EC1A !AL'];
         yield 'area confusion correction' => ['Y01 7HB'];
         yield 'ambiguous input' => ['B01 8TH'];
         yield 'rejected input' => ['!!!!'];
